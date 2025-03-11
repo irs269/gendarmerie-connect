@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,11 +9,11 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Mock payment data
+// Mock payment data with updated Comorian license plate format
 const paymentsData = [
   {
     id: 1,
-    plate: 'AB-123-CD',
+    plate: '111 A 73',
     driver: 'Ali Mohammed',
     amount: 15000,
     date: '2023-06-15',
@@ -26,7 +25,7 @@ const paymentsData = [
   },
   {
     id: 2,
-    plate: 'EF-456-GH',
+    plate: '222 B 71',
     driver: 'Fatima Abdou',
     amount: 5000,
     date: '2023-06-14',
@@ -38,7 +37,7 @@ const paymentsData = [
   },
   {
     id: 3,
-    plate: 'QR-345-ST',
+    plate: '333 C 72',
     driver: 'Aicha Omar',
     amount: 15000,
     date: '2023-06-12',
@@ -50,11 +49,11 @@ const paymentsData = [
   },
 ];
 
-// Mock pending payments data
+// Mock pending payments data with updated Comorian license plate format
 const pendingPaymentsData = [
   {
     id: 101,
-    plate: 'IJ-789-KL',
+    plate: '444 D 71',
     driver: 'Said Ali',
     amount: 10000,
     date: '2023-06-14',
@@ -62,7 +61,7 @@ const pendingPaymentsData = [
   },
   {
     id: 102,
-    plate: 'MN-012-OP',
+    plate: '555 E 72',
     driver: 'Ahmed Said',
     amount: 25000,
     date: '2023-06-13',
