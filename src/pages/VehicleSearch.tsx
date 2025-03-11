@@ -1,16 +1,16 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, Camera, Car, Clock, MapPin, User, FileText } from 'lucide-react';
+import { Search, Camera, Car, Clock, MapPin, User, FileText, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 // Mock vehicles data
 const vehiclesData = [
   {
     id: 1,
-    plate: 'AB-123-CD',
+    plate: '111 A 73',
     make: 'Toyota',
     model: 'Corolla',
     color: 'Blanc',
@@ -24,7 +24,7 @@ const vehiclesData = [
   },
   {
     id: 2,
-    plate: 'EF-456-GH',
+    plate: '225 B 42',
     make: 'Honda',
     model: 'Civic',
     color: 'Noir',
@@ -37,7 +37,7 @@ const vehiclesData = [
   },
   {
     id: 3,
-    plate: 'IJ-789-KL',
+    plate: '337 C 89',
     make: 'Renault',
     model: 'Clio',
     color: 'Rouge',
@@ -50,6 +50,32 @@ const vehiclesData = [
       { id: 303, type: 'Excès de vitesse', date: '2023-02-18', amount: 15000, status: 'paid' },
     ]
   },
+  {
+    id: 4,
+    plate: '442 D 15',
+    make: 'Peugeot',
+    model: '308',
+    color: 'Gris',
+    owner: 'Mohamed Ibrahim',
+    owner_id: 'ID-13579',
+    registration_date: '2022-01-10',
+    infractions: [
+      { id: 401, type: 'Défaut d\'assurance', date: '2023-05-30', amount: 25000, status: 'pending' },
+    ]
+  },
+  {
+    id: 5,
+    plate: '553 E 67',
+    make: 'Citroën',
+    model: 'C3',
+    color: 'Bleu',
+    owner: 'Aisha Hassan',
+    owner_id: 'ID-97531',
+    registration_date: '2021-09-15',
+    infractions: [
+      { id: 501, type: 'Feu rouge grillé', date: '2023-06-05', amount: 15000, status: 'paid' },
+    ]
+  },
 ];
 
 const VehicleSearch = () => {
@@ -58,9 +84,22 @@ const VehicleSearch = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<typeof vehiclesData[0] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   
-  const handleSearch = () => {
-    if (!searchQuery.trim()) {
+  // Handle query parameter for plate if coming from another page
+  useEffect(() => {
+    const plateParam = searchParams.get('plate');
+    if (plateParam) {
+      setSearchQuery(plateParam);
+      handleSearch(plateParam);
+    }
+  }, [searchParams]);
+  
+  const handleSearch = (plateOverride?: string) => {
+    const queryToUse = plateOverride || searchQuery;
+    
+    if (!queryToUse.trim()) {
       toast({
         title: "Recherche vide",
         description: "Veuillez entrer un numéro de plaque",
@@ -74,7 +113,7 @@ const VehicleSearch = () => {
     // Simulate API call with timeout
     setTimeout(() => {
       const results = vehiclesData.filter(vehicle => 
-        vehicle.plate.toLowerCase().includes(searchQuery.toLowerCase())
+        vehicle.plate.toLowerCase().includes(queryToUse.toLowerCase())
       );
       
       setSearchResults(results);
@@ -87,14 +126,27 @@ const VehicleSearch = () => {
           description: "Aucun véhicule trouvé avec cette plaque d'immatriculation",
         });
       }
-    }, 1000);
+    }, 800);
   };
   
   const handleScanPlate = () => {
     toast({
       title: "Scanner une plaque",
-      description: "Fonctionnalité en cours de développement",
+      description: "Fonctionnalité activée pour la démonstration",
     });
+    
+    // Simulate a successful scan
+    setTimeout(() => {
+      const randomVehicle = vehiclesData[Math.floor(Math.random() * vehiclesData.length)];
+      setSearchQuery(randomVehicle.plate);
+      handleSearch(randomVehicle.plate);
+    }, 1500);
+  };
+  
+  const handlePayInfractions = () => {
+    if (!selectedVehicle) return;
+    
+    navigate(`/payment-options?plate=${selectedVehicle.plate}`);
   };
   
   // Count pending infractions
@@ -122,7 +174,7 @@ const VehicleSearch = () => {
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
-          <Button onClick={handleSearch} disabled={isSearching}>
+          <Button onClick={() => handleSearch()} disabled={isSearching}>
             {isSearching ? 'Recherche...' : 'Rechercher'}
           </Button>
         </div>
@@ -195,6 +247,16 @@ const VehicleSearch = () => {
               </CardContent>
             </Card>
           </div>
+          
+          {pendingInfractions > 0 && (
+            <Button 
+              onClick={handlePayInfractions} 
+              className="w-full"
+            >
+              <CreditCard className="h-4 w-4 mr-2" />
+              Payer les amendes
+            </Button>
+          )}
           
           <h2 className="section-title">Historique des infractions</h2>
           <div className="space-y-3">

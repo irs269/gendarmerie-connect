@@ -6,6 +6,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Camera, Search, Filter, Car, FileText, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useNavigate } from 'react-router-dom';
 
 // Mock violation types
 const violationTypes = [
@@ -23,7 +34,7 @@ const violationTypes = [
 const infractions = [
   { 
     id: 1, 
-    plate: 'AB-123-CD', 
+    plate: '111 A 73', 
     type: 'Excès de vitesse', 
     amount: 15000, 
     date: '2023-06-15', 
@@ -35,7 +46,7 @@ const infractions = [
   },
   { 
     id: 2, 
-    plate: 'EF-456-GH', 
+    plate: '225 B 42', 
     type: 'Stationnement interdit', 
     amount: 5000, 
     date: '2023-06-14', 
@@ -47,7 +58,7 @@ const infractions = [
   },
   { 
     id: 3, 
-    plate: 'IJ-789-KL', 
+    plate: '337 C 89', 
     type: 'Téléphone au volant', 
     amount: 10000, 
     date: '2023-06-14',
@@ -59,7 +70,7 @@ const infractions = [
   },
   { 
     id: 4, 
-    plate: 'MN-012-OP', 
+    plate: '442 D 15', 
     type: 'Défaut d\'assurance', 
     amount: 25000, 
     date: '2023-06-13',
@@ -71,7 +82,7 @@ const infractions = [
   },
   { 
     id: 5, 
-    plate: 'QR-345-ST', 
+    plate: '553 E 67', 
     type: 'Feu rouge grillé', 
     amount: 15000, 
     date: '2023-06-12',
@@ -86,10 +97,21 @@ const infractions = [
 const TrafficViolations = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showNewViolationDialog, setShowNewViolationDialog] = useState(false);
+  const [newViolation, setNewViolation] = useState({
+    plate: '',
+    type: 'Excès de vitesse',
+    driver: '',
+    location: '',
+    amount: '',
+  });
+  const [allInfractions, setAllInfractions] = useState(infractions);
+  const [selectedInfraction, setSelectedInfraction] = useState<null | typeof infractions[0]>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Filter infractions based on search query and active tab
-  const filteredInfractions = infractions.filter(infraction => {
+  const filteredInfractions = allInfractions.filter(infraction => {
     const matchesSearch = 
       infraction.plate.toLowerCase().includes(searchQuery.toLowerCase()) || 
       infraction.driver.toLowerCase().includes(searchQuery.toLowerCase());
@@ -102,17 +124,72 @@ const TrafficViolations = () => {
   });
   
   const handleAddNew = () => {
-    toast({
-      title: "Nouvelle infraction",
-      description: "Fonctionnalité en cours de développement",
-    });
+    setShowNewViolationDialog(true);
   };
   
   const handleScanPlate = () => {
     toast({
       title: "Scanner une plaque",
-      description: "Fonctionnalité en cours de développement",
+      description: "Fonctionnalité activée pour la démonstration",
     });
+    
+    // Simulate a successful scan
+    setTimeout(() => {
+      setNewViolation(prev => ({
+        ...prev,
+        plate: '777 F 21'
+      }));
+      setShowNewViolationDialog(true);
+    }, 1500);
+  };
+
+  const handleSubmitNewViolation = () => {
+    // Validate form
+    if (!newViolation.plate || !newViolation.driver || !newViolation.location || !newViolation.amount) {
+      toast({
+        title: "Erreur de saisie",
+        description: "Veuillez remplir tous les champs obligatoires",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create new infraction
+    const newInfraction = {
+      id: allInfractions.length + 1,
+      plate: newViolation.plate,
+      type: newViolation.type,
+      amount: parseInt(newViolation.amount),
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toTimeString().slice(0, 5),
+      location: newViolation.location,
+      status: 'pending',
+      driver: newViolation.driver,
+      officer: 'Agent Connecté',
+    };
+
+    // Add to list
+    setAllInfractions(prev => [newInfraction, ...prev]);
+    
+    // Reset form and close dialog
+    setNewViolation({
+      plate: '',
+      type: 'Excès de vitesse',
+      driver: '',
+      location: '',
+      amount: '',
+    });
+    setShowNewViolationDialog(false);
+    
+    toast({
+      title: "Infraction ajoutée",
+      description: "L'infraction a été enregistrée avec succès",
+    });
+  };
+  
+  const handleInfractionClick = (infraction: typeof infractions[0]) => {
+    setSelectedInfraction(infraction);
+    navigate(`/vehicle-search?plate=${infraction.plate}`);
   };
 
   return (
@@ -168,7 +245,11 @@ const TrafficViolations = () => {
             </div>
           ) : (
             filteredInfractions.map(infraction => (
-              <Card key={infraction.id} className="overflow-hidden card-hover">
+              <Card 
+                key={infraction.id} 
+                className="overflow-hidden card-hover"
+                onClick={() => handleInfractionClick(infraction)}
+              >
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start">
                     <div className="flex gap-3">
@@ -223,7 +304,11 @@ const TrafficViolations = () => {
             </div>
           ) : (
             filteredInfractions.map(infraction => (
-              <Card key={infraction.id} className="overflow-hidden card-hover">
+              <Card 
+                key={infraction.id} 
+                className="overflow-hidden card-hover"
+                onClick={() => handleInfractionClick(infraction)}
+              >
                 {/* Same card content structure */}
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start">
@@ -275,7 +360,11 @@ const TrafficViolations = () => {
             </div>
           ) : (
             filteredInfractions.map(infraction => (
-              <Card key={infraction.id} className="overflow-hidden card-hover">
+              <Card 
+                key={infraction.id} 
+                className="overflow-hidden card-hover"
+                onClick={() => handleInfractionClick(infraction)}
+              >
                 {/* Same card content structure */}
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start">
@@ -315,6 +404,78 @@ const TrafficViolations = () => {
           )}
         </TabsContent>
       </Tabs>
+      
+      {/* Add New Violation Dialog */}
+      <Dialog open={showNewViolationDialog} onOpenChange={setShowNewViolationDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Ajouter une nouvelle infraction</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="plate">Numéro d'immatriculation</Label>
+              <Input 
+                id="plate" 
+                placeholder="ex: 111 A 73" 
+                value={newViolation.plate}
+                onChange={(e) => setNewViolation(prev => ({...prev, plate: e.target.value}))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="driver">Nom du conducteur</Label>
+              <Input 
+                id="driver" 
+                placeholder="Nom et prénom" 
+                value={newViolation.driver}
+                onChange={(e) => setNewViolation(prev => ({...prev, driver: e.target.value}))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="type">Type d'infraction</Label>
+              <Select 
+                value={newViolation.type}
+                onValueChange={(value) => setNewViolation(prev => ({...prev, type: value}))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner le type d'infraction" />
+                </SelectTrigger>
+                <SelectContent>
+                  {violationTypes.map((type) => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="location">Lieu</Label>
+              <Input 
+                id="location" 
+                placeholder="Lieu de l'infraction" 
+                value={newViolation.location}
+                onChange={(e) => setNewViolation(prev => ({...prev, location: e.target.value}))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="amount">Montant (KMF)</Label>
+              <Input 
+                id="amount" 
+                type="number" 
+                placeholder="ex: 15000" 
+                value={newViolation.amount}
+                onChange={(e) => setNewViolation(prev => ({...prev, amount: e.target.value}))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewViolationDialog(false)}>Annuler</Button>
+            <Button onClick={handleSubmitNewViolation}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       <div className="h-16" /> {/* Bottom spacing for navigation bar */}
     </div>

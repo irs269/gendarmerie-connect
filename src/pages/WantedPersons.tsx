@@ -4,9 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Camera, Plus, User, MapPin, AlertTriangle, Clock, Calendar, FileText } from 'lucide-react';
+import { Search, Camera, Plus, User, MapPin, AlertTriangle, Clock, Calendar, FileText, Phone } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 // Mock wanted persons data
 const wantedPersonsData = [
@@ -86,10 +96,23 @@ const WantedPersons = () => {
   const [activeTab, setActiveTab] = useState('wanted');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPerson, setSelectedPerson] = useState<typeof wantedPersonsData[0] | null>(null);
+  const [allPersons, setAllPersons] = useState(wantedPersonsData);
+  const [showNewPersonDialog, setShowNewPersonDialog] = useState(false);
+  const [showCallDialog, setShowCallDialog] = useState(false);
+  const [newPerson, setNewPerson] = useState({
+    name: '',
+    id_number: '',
+    age: '',
+    reason: '',
+    priority: 'medium',
+    last_seen: '',
+    description: '',
+    contact: '',
+  });
   const { toast } = useToast();
   
   // Filter persons based on search query and active tab
-  const filteredPersons = wantedPersonsData.filter(person => {
+  const filteredPersons = allPersons.filter(person => {
     const matchesSearch = 
       person.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       person.id_number.toLowerCase().includes(searchQuery.toLowerCase());
@@ -102,17 +125,25 @@ const WantedPersons = () => {
   });
   
   const handleAddNew = () => {
-    toast({
-      title: "Ajouter un avis de recherche",
-      description: "Fonctionnalité en cours de développement",
-    });
+    setShowNewPersonDialog(true);
   };
   
   const handleScanID = () => {
     toast({
       title: "Scanner une pièce d'identité",
-      description: "Fonctionnalité en cours de développement",
+      description: "Fonctionnalité activée pour la démonstration",
     });
+    
+    // Simulate a successful scan
+    setTimeout(() => {
+      setNewPerson({
+        ...newPerson,
+        name: 'Hassan Ali Mohamed',
+        id_number: 'ID-' + Math.floor(10000 + Math.random() * 90000),
+        age: '29',
+      });
+      setShowNewPersonDialog(true);
+    }, 1500);
   };
   
   const handlePersonClick = (person: typeof wantedPersonsData[0]) => {
@@ -121,6 +152,88 @@ const WantedPersons = () => {
   
   const handleBackToList = () => {
     setSelectedPerson(null);
+  };
+
+  const handleSubmitNewPerson = () => {
+    // Validate form
+    if (!newPerson.name || !newPerson.id_number || !newPerson.reason || !newPerson.last_seen) {
+      toast({
+        title: "Erreur de saisie",
+        description: "Veuillez remplir tous les champs obligatoires",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create new person
+    const newWantedPerson = {
+      id: allPersons.length + 1,
+      name: newPerson.name,
+      photo: 'https://randomuser.me/api/portraits/men/' + Math.floor(Math.random() * 60) + '.jpg',
+      id_number: newPerson.id_number,
+      age: parseInt(newPerson.age) || 30,
+      reason: newPerson.reason,
+      priority: newPerson.priority as 'high' | 'medium' | 'low',
+      status: 'wanted' as 'wanted' | 'caught',
+      last_seen: newPerson.last_seen,
+      last_seen_date: new Date().toISOString().split('T')[0],
+      description: newPerson.description,
+      contact: newPerson.contact || 'Agent Connecté - 123-4567',
+    };
+
+    // Add to list
+    setAllPersons(prev => [newWantedPerson, ...prev]);
+    
+    // Reset form and close dialog
+    setNewPerson({
+      name: '',
+      id_number: '',
+      age: '',
+      reason: '',
+      priority: 'medium',
+      last_seen: '',
+      description: '',
+      contact: '',
+    });
+    setShowNewPersonDialog(false);
+    
+    toast({
+      title: "Avis de recherche ajouté",
+      description: "La personne a été ajoutée à la liste des personnes recherchées",
+    });
+  };
+  
+  const handleMarkAsCaught = () => {
+    if (!selectedPerson) return;
+    
+    const updatedPersons = allPersons.map(person => 
+      person.id === selectedPerson.id 
+        ? {...person, status: 'caught', last_seen: 'Arrêté(e)', last_seen_date: new Date().toISOString().split('T')[0]}
+        : person
+    );
+    
+    setAllPersons(updatedPersons);
+    setSelectedPerson({...selectedPerson, status: 'caught', last_seen: 'Arrêté(e)', last_seen_date: new Date().toISOString().split('T')[0]});
+    
+    toast({
+      title: "Statut mis à jour",
+      description: "La personne a été marquée comme arrêtée",
+    });
+  };
+  
+  const handleMakeCall = () => {
+    if (!selectedPerson) return;
+    
+    setShowCallDialog(true);
+    
+    // Simulate call
+    setTimeout(() => {
+      setShowCallDialog(false);
+      toast({
+        title: "Appel terminé",
+        description: "L'appel a été simulé avec succès",
+      });
+    }, 3000);
   };
 
   return (
@@ -420,21 +533,157 @@ const WantedPersons = () => {
           
           <div className="flex gap-3 mb-8">
             {selectedPerson.status === 'wanted' ? (
-              <Button className="flex-1 bg-green-600 hover:bg-green-700">
-                Marquer comme arrêté
-              </Button>
+              <>
+                <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={handleMarkAsCaught}>
+                  Marquer comme arrêté
+                </Button>
+                <Button variant="outline" className="flex-1" onClick={handleMakeCall}>
+                  <Phone className="h-4 w-4 mr-2" />
+                  Contacter l'agent
+                </Button>
+              </>
             ) : (
-              <Button variant="outline" className="flex-1">
-                Voir le rapport d'arrestation
-              </Button>
+              <>
+                <Button variant="outline" className="flex-1">
+                  Voir le rapport d'arrestation
+                </Button>
+                <Button variant="outline" className="flex-1" onClick={handleMakeCall}>
+                  <Phone className="h-4 w-4 mr-2" />
+                  Contacter l'agent
+                </Button>
+              </>
             )}
-            
-            <Button variant="outline" className="flex-1">
-              Mettre à jour l'avis
-            </Button>
           </div>
         </div>
       )}
+      
+      {/* Add New Person Dialog */}
+      <Dialog open={showNewPersonDialog} onOpenChange={setShowNewPersonDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Ajouter un avis de recherche</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nom complet</Label>
+              <Input 
+                id="name" 
+                placeholder="Nom et prénom" 
+                value={newPerson.name}
+                onChange={(e) => setNewPerson(prev => ({...prev, name: e.target.value}))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="id_number">Numéro d'identité</Label>
+              <Input 
+                id="id_number" 
+                placeholder="ex: ID-12345" 
+                value={newPerson.id_number}
+                onChange={(e) => setNewPerson(prev => ({...prev, id_number: e.target.value}))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="age">Âge</Label>
+              <Input 
+                id="age" 
+                type="number" 
+                placeholder="ex: 30" 
+                value={newPerson.age}
+                onChange={(e) => setNewPerson(prev => ({...prev, age: e.target.value}))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="reason">Motif de recherche</Label>
+              <Input 
+                id="reason" 
+                placeholder="ex: Vol avec effraction" 
+                value={newPerson.reason}
+                onChange={(e) => setNewPerson(prev => ({...prev, reason: e.target.value}))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="priority">Priorité</Label>
+              <Select 
+                value={newPerson.priority}
+                onValueChange={(value) => setNewPerson(prev => ({...prev, priority: value}))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner la priorité" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Faible</SelectItem>
+                  <SelectItem value="medium">Moyenne</SelectItem>
+                  <SelectItem value="high">Haute</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="last_seen">Dernière localisation</Label>
+              <Input 
+                id="last_seen" 
+                placeholder="ex: Moroni, près du marché" 
+                value={newPerson.last_seen}
+                onChange={(e) => setNewPerson(prev => ({...prev, last_seen: e.target.value}))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea 
+                id="description" 
+                placeholder="Description physique et autres détails..." 
+                value={newPerson.description}
+                onChange={(e) => setNewPerson(prev => ({...prev, description: e.target.value}))}
+                className="min-h-[80px]"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="contact">Contact de l'agent</Label>
+              <Input 
+                id="contact" 
+                placeholder="ex: Lieutenant Ibrahim - 333-4444" 
+                value={newPerson.contact}
+                onChange={(e) => setNewPerson(prev => ({...prev, contact: e.target.value}))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewPersonDialog(false)}>Annuler</Button>
+            <Button onClick={handleSubmitNewPerson}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Call Dialog */}
+      <Dialog open={showCallDialog} onOpenChange={setShowCallDialog}>
+        <DialogContent className="sm:max-w-[300px]">
+          <div className="text-center py-4">
+            <div className="mx-auto w-16 h-16 rounded-full bg-primary flex items-center justify-center animate-pulse mb-4">
+              <Phone className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-xl font-medium">Appel en cours...</h3>
+            <p className="text-muted-foreground mt-2">
+              {selectedPerson?.contact}
+            </p>
+          </div>
+          <div className="flex justify-center mt-4">
+            <Button 
+              variant="destructive" 
+              size="lg"
+              className="rounded-full h-12 w-12"
+              onClick={() => setShowCallDialog(false)}
+            >
+              <Phone className="h-6 w-6" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       <div className="h-16" /> {/* Bottom spacing for navigation bar */}
     </div>
