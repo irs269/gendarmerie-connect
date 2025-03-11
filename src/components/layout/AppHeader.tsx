@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Shield, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
@@ -22,7 +22,11 @@ const AppHeader = () => {
     <header className="sticky top-0 z-40 bg-gradient-to-r from-gendarmerie-blue to-gendarmerie-blue-light text-white shadow-md">
       <div className="container flex items-center justify-between h-16 px-4">
         <div className="flex items-center">
-          <Shield className="h-8 w-8 mr-2 text-gendarmerie-gold" />
+          <img 
+            src="/lovable-uploads/2155518e-ce15-4618-826c-6ce0acf92093.png" 
+            alt="Gendarmerie des Comores" 
+            className="h-10 w-10 mr-2" 
+          />
           <div>
             <h1 className="text-base font-bold leading-tight tracking-wider">GENDARMERIE</h1>
             <p className="text-[10px] text-white/80 tracking-wide">COMORES DIGITAL</p>
@@ -38,7 +42,11 @@ const AppHeader = () => {
           <SheetContent side="right" className="w-[250px] bg-white">
             <SheetHeader>
               <SheetTitle className="flex items-center">
-                <Shield className="h-6 w-6 mr-2 text-gendarmerie-blue" />
+                <img 
+                  src="/lovable-uploads/2155518e-ce15-4618-826c-6ce0acf92093.png" 
+                  alt="Gendarmerie des Comores" 
+                  className="h-8 w-8 mr-2" 
+                />
                 <span>Gendarmerie Digital</span>
               </SheetTitle>
             </SheetHeader>

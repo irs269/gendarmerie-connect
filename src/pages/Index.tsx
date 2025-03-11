@@ -1,11 +1,10 @@
 
 import { useState } from 'react';
-import { Bell, Shield, Calendar, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Bell, Calendar, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("taches");
@@ -18,8 +17,8 @@ const Index = () => {
   ];
   
   const infractions = [
-    { id: 1, plaque: "KM 1234", infraction: "Excès de vitesse", montant: "15000 KMF", date: "Aujourd'hui" },
-    { id: 2, plaque: "KM 5678", infraction: "Stationnement interdit", montant: "5000 KMF", date: "Hier" },
+    { id: 1, plaque: "111 A 73", infraction: "Excès de vitesse", montant: "15000 KMF", date: "Aujourd'hui" },
+    { id: 2, plaque: "222 B 71", infraction: "Stationnement interdit", montant: "5000 KMF", date: "Hier" },
   ];
   
   const alertes = [
@@ -45,11 +44,24 @@ const Index = () => {
         </div>
       </div>
 
+      {/* Logo central */}
+      <div className="flex justify-center my-4">
+        <img 
+          src="/lovable-uploads/2155518e-ce15-4618-826c-6ce0acf92093.png" 
+          alt="Gendarmerie des Comores" 
+          className="h-20 w-20" 
+        />
+      </div>
+
       {/* Statistiques rapides */}
-      <div className="grid grid-cols-2 gap-4 mt-6">
+      <div className="grid grid-cols-2 gap-4 mt-4">
         <Card className="bg-gradient-to-br from-gendarmerie-blue to-gendarmerie-blue-light text-white">
           <CardContent className="p-4 flex flex-col items-center justify-center">
-            <Shield className="h-8 w-8 mb-2" />
+            <img 
+              src="/lovable-uploads/2155518e-ce15-4618-826c-6ce0acf92093.png" 
+              alt="Gendarmerie des Comores" 
+              className="h-8 w-8 mb-2" 
+            />
             <p className="text-sm font-medium">Infractions</p>
             <p className="text-2xl font-bold">12</p>
             <p className="text-xs opacity-80">aujourd'hui</p>
@@ -190,7 +202,11 @@ const Index = () => {
         <h2 className="text-lg font-semibold mb-3">Accès rapides</h2>
         <div className="grid grid-cols-2 gap-4">
           <Button className="h-auto py-4 flex flex-col items-center bg-gendarmerie-blue hover:bg-gendarmerie-blue-light">
-            <Shield className="h-6 w-6 mb-2" />
+            <img 
+              src="/lovable-uploads/2155518e-ce15-4618-826c-6ce0acf92093.png" 
+              alt="Gendarmerie des Comores" 
+              className="h-6 w-6 mb-2" 
+            />
             <span>Nouvelle Infraction</span>
           </Button>
           <Button className="h-auto py-4 flex flex-col items-center bg-gendarmerie-blue hover:bg-gendarmerie-blue-light">
