@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Camera, Search, Filter, Car, FileText, Clock } from 'lucide-react';
+import { Plus, Camera, Search, Filter, Car, FileText, Clock, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -17,6 +17,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
+import { Switch } from '@/components/ui/switch';
 
 // Mock violation types
 const violationTypes = [
@@ -107,8 +108,18 @@ const TrafficViolations = () => {
   });
   const [allInfractions, setAllInfractions] = useState(infractions);
   const [selectedInfraction, setSelectedInfraction] = useState<null | typeof infractions[0]>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [scanResult, setScanResult] = useState<null | string>(null);
+  const [isAutomaticEntry, setIsAutomaticEntry] = useState(true);
+  const [plateDatabase, setPlateDatabase] = useState([
+    '223 KM 21', '774 AB 31', '196 CD 76', '555 GH 01', '321 EF 04',
+    '111 A 73', '225 B 42', '337 C 89', '442 D 15', '553 E 67', '777 F 21'
+  ]);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const scanTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Filter infractions based on search query and active tab
   const filteredInfractions = allInfractions.filter(infraction => {
@@ -127,21 +138,75 @@ const TrafficViolations = () => {
     setShowNewViolationDialog(true);
   };
   
-  const handleScanPlate = () => {
-    toast({
-      title: "Scanner une plaque",
-      description: "Fonctionnalité activée pour la démonstration",
-    });
-    
-    // Simulate a successful scan
-    setTimeout(() => {
-      setNewViolation(prev => ({
-        ...prev,
-        plate: '777 F 21'
-      }));
-      setShowNewViolationDialog(true);
-    }, 1500);
+  const stopScanning = () => {
+    if (scanTimerRef.current) {
+      clearInterval(scanTimerRef.current);
+      scanTimerRef.current = null;
+    }
+    setIsScanning(false);
+    setScanProgress(0);
   };
+
+  const simulateScanPlateRecognition = () => {
+    // Random success rate (70% success)
+    const success = Math.random() < 0.7;
+    const scanTime = Math.floor(Math.random() * 1000) + 1500; // 1.5-2.5 seconds
+    
+    setIsScanning(true);
+    let progress = 0;
+    
+    // Start progress animation
+    scanTimerRef.current = setInterval(() => {
+      progress += 2;
+      setScanProgress(progress);
+      
+      if (progress >= 100) {
+        stopScanning();
+        
+        if (success) {
+          // Pick a random plate from our database
+          const randomIndex = Math.floor(Math.random() * plateDatabase.length);
+          const recognizedPlate = plateDatabase[randomIndex];
+          setScanResult(recognizedPlate);
+          
+          toast({
+            title: "Plaque reconnue",
+            description: `Plaque d'immatriculation: ${recognizedPlate}`,
+          });
+          
+          // If automatic entry is enabled, populate the form automatically
+          if (isAutomaticEntry) {
+            setNewViolation(prev => ({
+              ...prev,
+              plate: recognizedPlate,
+            }));
+            setShowNewViolationDialog(true);
+          }
+        } else {
+          setScanResult(null);
+          toast({
+            title: "Échec de la reconnaissance",
+            description: "Impossible de lire la plaque d'immatriculation",
+            variant: "destructive",
+          });
+        }
+      }
+    }, 20);
+  };
+  
+  const handleScanPlate = () => {
+    setIsScanning(true);
+    simulateScanPlateRecognition();
+  };
+
+  useEffect(() => {
+    // Cleanup on unmount
+    return () => {
+      if (scanTimerRef.current) {
+        clearInterval(scanTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmitNewViolation = () => {
     // Validate form
@@ -190,6 +255,17 @@ const TrafficViolations = () => {
   const handleInfractionClick = (infraction: typeof infractions[0]) => {
     setSelectedInfraction(infraction);
     navigate(`/vehicle-search?plate=${infraction.plate}`);
+  };
+
+  const useScanResult = () => {
+    if (scanResult) {
+      setNewViolation(prev => ({
+        ...prev,
+        plate: scanResult
+      }));
+      setShowNewViolationDialog(true);
+      setScanResult(null);
+    }
   };
 
   return (
@@ -474,6 +550,76 @@ const TrafficViolations = () => {
             <Button variant="outline" onClick={() => setShowNewViolationDialog(false)}>Annuler</Button>
             <Button onClick={handleSubmitNewViolation}>Enregistrer</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Scanning Dialog */}
+      <Dialog open={isScanning} onOpenChange={(open) => !open && stopScanning()}>
+        <DialogContent className="sm:max-w-[425px] p-0 gap-0 overflow-hidden">
+          <div className="relative">
+            {/* Camera viewfinder */}
+            <div className="bg-black aspect-video w-full relative overflow-hidden">
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="w-64 h-20 border-2 border-white/70 relative rounded-md">
+                  <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-primary -translate-x-1 -translate-y-1"></div>
+                  <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-primary translate-x-1 -translate-y-1"></div>
+                  <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-primary -translate-x-1 translate-y-1"></div>
+                  <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-primary translate-x-1 translate-y-1"></div>
+                </div>
+                <div className="text-white/90 text-sm mt-4">Positionnez la plaque dans le cadre</div>
+              </div>
+              
+              {/* Animated scanning line */}
+              <div 
+                className="absolute left-0 right-0 h-1 bg-primary/70 z-10 transition-all duration-100"
+                style={{
+                  top: `${40 + (scanProgress * 0.2)}%`, 
+                  boxShadow: '0 0 10px rgba(var(--primary), 0.7), 0 0 20px rgba(var(--primary), 0.5)'
+                }}
+              ></div>
+              
+              {/* Sample plate image (just for visual) */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className={`text-white bg-gray-800/40 px-4 py-2 rounded-md transition-opacity ${scanProgress > 60 ? 'opacity-100' : 'opacity-0'}`}>
+                  Traitement en cours...
+                </div>
+              </div>
+            </div>
+            
+            {/* Progress bar */}
+            <div className="w-full bg-gray-200 h-1">
+              <div 
+                className="bg-primary h-1 transition-all duration-100"
+                style={{ width: `${scanProgress}%` }} 
+              ></div>
+            </div>
+          </div>
+          
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <div className="text-lg font-semibold">Scanner en cours...</div>
+              <Button variant="ghost" size="icon" onClick={stopScanning}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {scanResult && (
+              <div className="mb-4">
+                <div className="text-sm text-muted-foreground mb-1">Plaque détectée :</div>
+                <div className="text-xl font-bold">{scanResult}</div>
+                <Button onClick={useScanResult} className="w-full mt-3">Utiliser cette plaque</Button>
+              </div>
+            )}
+            
+            <div className="flex items-center space-x-2 mt-4">
+              <Switch 
+                id="auto-entry"
+                checked={isAutomaticEntry}
+                onCheckedChange={setIsAutomaticEntry}
+              />
+              <Label htmlFor="auto-entry">Remplir le formulaire automatiquement</Label>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
       
